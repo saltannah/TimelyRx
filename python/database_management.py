@@ -8,12 +8,17 @@ conn = sqlite3.connect("C:\\Users\\hannah\\Documents\\GitHub\\TimelyRx\\python\\
 c = conn.cursor()
 
 def logDose(date, time):
-    c.execute("INSERT into doses (date, time) values (?, ?)")
+    c.execute("INSERT into doses (Date, Time) values (?, ?), (date, time)")
+    conn.commit
 
 while True:
-    if ser.in_waiting:
-        line = ser.readline().decode('utf-8').strip()
+    if arduino.in_waiting:
+        line = arduino.readline().decode('utf-8').strip()
 
-    try: timestamp = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+        date = timestamp.date()
+        time = timestamp.time()
+        logDose(date, time)
+        print(date, time)
 
 conn.close()

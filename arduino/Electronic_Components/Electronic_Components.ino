@@ -38,7 +38,7 @@ void setup() {
   timerStart = millis();
 
   //DELETE AFTER USE - only used to set time when arduino is started
-  //RTCTime startTime(12, Month::APRIL, 2025, 19, 33, 45, DayOfWeek::WEDNESDAY, SaveLight::SAVING_TIME_ACTIVE);
+  //RTCTime startTime(12, Month::APRIL, 2025, 22, 19, 40, DayOfWeek::WEDNESDAY, SaveLight::SAVING_TIME_ACTIVE);
   //RTC.setTime(startTime);
 }
 
@@ -59,7 +59,7 @@ void loop() {
 
       if (currentState == LOW) {
         boxOpen = true;
-        Serial.println("Box opened, data logged!");
+        //Serial.println("Box opened, data logged!");
         timerStart = millis();
         
       } else {
