@@ -4,7 +4,7 @@ from datetime import datetime
 
 arduino = serial.Serial('COM5', 9600, timeout=1)  # Adjust COM port
 
-conn = sqlite3.connect("C:\Users\hannah\Documents\GitHub\TimelyRx\python\dosage_data.db")
+conn = sqlite3.connect("C:\\Users\\hannah\\Documents\\GitHub\\TimelyRx\\python\\dosage_data.db")
 c = conn.cursor()
 
 def logDose(date, time):
