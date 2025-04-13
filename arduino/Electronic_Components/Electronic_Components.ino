@@ -9,13 +9,15 @@
 
 const int toggle = 2;
 bool boxOpen = false;
+bool missedDose = false;
+String lastDose;
 int prevState = HIGH;
 int doseHourly = 8;
 unsigned long timerStart;
 unsigned long doseInc = doseHourly * 60 * 60 * 1000; // hour to milliseconds
 unsigned long nextDose;
 unsigned long lastUpdate = 0;
-const unsigned long updateInterval = 500; // for refresh rate of screen
+const unsigned long updateInterval = 1000; // for refresh rate of screen
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
@@ -30,7 +32,7 @@ void setup() {
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
 
-  display.println("Thank you for using TimelyRx!");
+  //display.println("Thank you for using \n TimelyRx!");
   display.display();
 
   RTC.begin();
@@ -38,7 +40,7 @@ void setup() {
   timerStart = millis();
 
   //DELETE AFTER USE - only used to set time when arduino is started
-  //RTCTime startTime(12, Month::APRIL, 2025, 22, 19, 40, DayOfWeek::WEDNESDAY, SaveLight::SAVING_TIME_ACTIVE);
+  //RTCTime startTime(13, Month::APRIL, 2025, 06, 19, 30, DayOfWeek::WEDNESDAY, SaveLight::SAVING_TIME_ACTIVE);
   //RTC.setTime(startTime);
 }
 
@@ -46,8 +48,7 @@ void loop() {
   unsigned long currentMillis = millis();
   int currentState = digitalRead(toggle);
 
-  unsigned long currentTimer = millis();
-  nextDose = doseInc - (currentTimer - timerStart);
+  nextDose = doseInc - (currentMillis - timerStart);
   
   // Check if state changed
   if (currentState != prevState) {
@@ -57,10 +58,12 @@ void loop() {
     if (currentState != prevState) { // double check
       prevState = currentState; //set previous state
 
-      if (currentState == LOW) {
+      if (currentState == LOW) { //circuit is closed
         boxOpen = true;
-        //Serial.println("Box opened, data logged!");
         timerStart = millis();
+        lastDose = getDoseTime();
+        missedDose = false;
+        sendTimeStamp();
         
       } else {
         boxOpen = false;
@@ -68,8 +71,13 @@ void loop() {
     }
   }
   if (currentMillis - lastUpdate >= updateInterval) {
-    displayDoseTime(getDoseTime());
+    displayDoseTime(lastDose);
     lastUpdate = currentMillis;
+  }
+
+  if (nextDose <= 0){
+    nextDose = doseInc;
+    missedDose = true;
   }
 }
 
@@ -98,28 +106,35 @@ String getDoseTime(){
 String calcNextDose(){
   int nextHour = nextDose / (60 * 60 * 1000);
   int nextMin = (nextDose % (60 * 60 * 1000)) / (60 * 1000);
+  int nextSec = (nextDose % (60 * 1000)) / 1000;
 
-  char buffer[6];
-  sprintf(buffer, "%d:%02d", nextHour, nextMin);  // Format with leading zero for minutes
+  char buffer[11];
+  sprintf(buffer, "%d:%02d:%02d", nextHour, nextMin, nextSec);  // countdowm timer format
   return String(buffer);
 }
 
 void displayDoseTime(String dosageTime){ //add in the skip dose feature!!
   display.clearDisplay();
-  display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
-
-  display.println("Last Dose:");
-  display.println("");
-  //display.setFont(&FreeSans9pt7b);
-  display.println(dosageTime);
-
-  display.setFont();
   display.setTextSize(1);
+
+  if(nextDose < doseInc / 2 && missedDose){
+    display.println("Dose is overdue :(");
+    display.println("");
+    display.println("Skip this one!");
+  }
+
+  else{
+    display.print("Last Dose: ");
+    display.println(dosageTime);
+    display.println("");
+  }
+
+  display.println("");
   display.println("Next Dose In:");
   display.println("");
-  //display.setFont(&FreeSans9pt7b);
+  display.setTextSize(2);
   display.print(calcNextDose());
 
   display.display();// Push buffer to screen
